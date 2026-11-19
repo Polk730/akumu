@@ -1,0 +1,25 @@
+name: Deploy to Itch.io
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.BUTLER_API_KEY != '' && vars.ITCH_USER != '' && vars.ITCH_GAME != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package HTML5 Build
+        run: |
+          mkdir -p dist
+          cp index.html dist/index.html
+      - name: Push to Itch.io via Butler
+        uses: manleydev/butler-publish-itchio-action@master
+        env:
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_API_KEY }}
+          CHANNEL: html5
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+          ITCH_USER: ${{ vars.ITCH_USER }}
+          PACKAGE: dist
