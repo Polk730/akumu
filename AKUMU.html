@@ -4657,8 +4657,8 @@ function toggleClipboard(force){
   ct==="playing"&&!pa&&Ql();
  }
 }
-const LEDGER_KEY="akumu_leaderboard_v3",DEVICE_ID_KEY="akumu_device_id_v1";
-let currentLedgerFilter="all",_lbMqtt=null,_lbGlobalMap=new Map;
+const LEDGER_KEY="akumu_leaderboard_v3",LEGACY_LEDGER_KEY="akumu_leaderboard_v2",DEVICE_ID_KEY="akumu_device_id_v1";
+let currentLedgerFilter="all",_lbMqtt=null,_lbGlobalMap=new Map,_lbMigrated=!1;
 function getDeviceId(){
  try{
   let id=localStorage.getItem(DEVICE_ID_KEY);
@@ -4672,15 +4672,38 @@ function getDeviceId(){
 function loadSpeedrunLedger(){
  try{
   const raw=localStorage.getItem(LEDGER_KEY);
-  const parsed=raw?JSON.parse(raw):null;
-  if(Array.isArray(parsed))return parsed;
+  const list=raw?JSON.parse(raw):[];
+  const arr=Array.isArray(list)?list:[];
+  if(!_lbMigrated){
+   _lbMigrated=!0;
+   const oldRaw=localStorage.getItem(LEGACY_LEDGER_KEY);
+   if(oldRaw){
+    const oldArr=JSON.parse(oldRaw);
+    if(Array.isArray(oldArr)){
+     let changed=!1;
+     for(const r of oldArr){
+      if(!r||String(r.mode||"").toLowerCase()==="demo"||!Number.isFinite(r.timeSec)||r.timeSec<1)continue;
+      const k=r.deviceId||r.id||`leg_${String(r.names||"GUEST").toUpperCase()}`;
+      if(!arr.some(x=>(x.deviceId||x.id)===k)){
+       arr.push({id:k,deviceId:k,names:String(r.names||"GUEST").toUpperCase().slice(0,40),timeSec:Math.max(1,Math.round(r.timeSec)),isCoop:!!r.isCoop,mode:r.mode||"SOLO",date:r.date||new Date().toISOString().slice(0,10)});
+       changed=!0;
+      }
+     }
+     if(changed){
+      arr.sort((a,b)=>a.timeSec-b.timeSec);
+      localStorage.setItem(LEDGER_KEY,JSON.stringify(arr.slice(0,50)));
+     }
+    }
+   }
+  }
+  return arr.filter(r=>r&&String(r.mode||"").toLowerCase()!=="demo"&&Number.isFinite(r.timeSec)&&r.timeSec>=1);
  }catch{}
  return[];
 }
 function mergeLeaderboardEntry(entry){
  if(!entry||String(entry.mode||"").toLowerCase()==="demo"||!Number.isFinite(entry.timeSec)||entry.timeSec<1)return!1;
- const devKey=entry.deviceId||entry.id||`${entry.names}_${Math.round(entry.timeSec)}`;
- const clean={id:devKey,deviceId:devKey,names:String(entry.names||"GUEST").toUpperCase().slice(0,40),timeSec:Math.max(1,Math.round(entry.timeSec)),isCoop:!!entry.isCoop,mode:entry.mode||"SOLO",clues:Number(entry.clues)||0,date:entry.date||new Date().toISOString().slice(0,10)};
+ const devKey=entry.deviceId||entry.id||`leg_${String(entry.names||"GUEST").toUpperCase()}`;
+ const clean={id:devKey,deviceId:devKey,names:String(entry.names||"GUEST").toUpperCase().slice(0,40),timeSec:Math.max(1,Math.round(entry.timeSec)),isCoop:!!entry.isCoop,mode:entry.mode||"SOLO",date:entry.date||new Date().toISOString().slice(0,10)};
  const list=loadSpeedrunLedger();
  const idx=list.findIndex(x=>(x.deviceId||x.id)===devKey);
  let improved=!1;
@@ -4703,13 +4726,15 @@ function mergeLeaderboardEntry(entry){
 function publishGlobalLeaderboardEntry(entry){
  const key=entry?.deviceId||entry?.id;
  if(!key||typeof window>"u")return;
- const send=c=>{try{c.publish("akumu1986/leaderboard/v3/"+key,JSON.stringify(entry),{retain:!0})}catch{}};
- if(_A?.mqttClient?.connected){send(_A.mqttClient);return}
+ const payload=JSON.stringify(entry);
+ const send=(c,closeAfter=!1)=>{try{c.publish("akumu1986/leaderboard/v3/"+key,payload,{retain:!0,qos:1},()=>{closeAfter&&setTimeout(()=>{try{c.end()}catch{}},500)})}catch{}};
+ if(_lbMqtt?.connected){send(_lbMqtt,!1);return}
+ if(_A?.mqttClient?.connected){send(_A.mqttClient,!1);return}
  _A._ensureScripts().then(()=>{
   if(!window.mqtt)return;
   try{
-   const c=window.mqtt.connect(ZR[0],{connectTimeout:4e3,reconnectPeriod:0});
-   c.on("connect",()=>{send(c),setTimeout(()=>{try{c.end(!0)}catch{}},1200)});
+   const c=window.mqtt.connect(ZR[0],{connectTimeout:5e3,reconnectPeriod:0});
+   c.on("connect",()=>{send(c,!0)});
    c.on("error",()=>{try{c.end(!0)}catch{}});
   }catch{}
  });
@@ -4720,14 +4745,23 @@ function syncGlobalLeaderboard(){
   if(!window.mqtt)return;
   if(_lbMqtt?.connected)return;
   try{
-   const c=window.mqtt.connect(ZR[0],{connectTimeout:4e3,reconnectPeriod:3e3});
+   const c=window.mqtt.connect(ZR[0],{connectTimeout:5e3,reconnectPeriod:3e3});
    _lbMqtt=c;
-   c.on("connect",()=>{_lbMqtt===c&&c.subscribe("akumu1986/leaderboard/v3/+")});
+   c.on("connect",()=>{
+    if(_lbMqtt!==c)return;
+    c.subscribe(["akumu1986/leaderboard/v3/+","akumu1986/leaderboard/v2/+"],()=>{
+     // Re-seed our locally saved PB so broker restarts never lose scores
+     for(const r of loadSpeedrunLedger()){
+      const k=r.deviceId||r.id;
+      if(k&&String(r.mode||"").toLowerCase()!=="demo")try{c.publish("akumu1986/leaderboard/v3/"+k,JSON.stringify(r),{retain:!0,qos:1})}catch{}
+     }
+    });
+   });
    c.on("message",(topic,payload)=>{
     if(!payload||!payload.length)return;
     try{
      const entry=JSON.parse(payload.toString());
-     if(entry&&Number.isFinite(entry.timeSec)){
+     if(entry&&Number.isFinite(entry.timeSec)&&String(entry.mode||"").toLowerCase()!=="demo"){
       mergeLeaderboardEntry(entry);
       !f("menu-ledger-modal").hidden&&renderSpeedrunLedger(currentLedgerFilter);
      }
@@ -4737,11 +4771,12 @@ function syncGlobalLeaderboard(){
   }catch{}
  });
 }
+setTimeout(()=>{try{syncGlobalLeaderboard()}catch{}},1400);
 function recordSpeedrunEscape(names,timeSec,isCoop,mode="NORMAL",clues=0,broadcast=!0,deviceKey=""){
  if(String(mode||"").toLowerCase()==="demo"||!Number.isFinite(timeSec)||timeSec<1)return;
  const sec=Math.max(1,Math.round(timeSec));
  const key=deviceKey||getDeviceId();
- const entry={id:key,deviceId:key,names:String(names||cp||"GUEST").toUpperCase().slice(0,40),timeSec:sec,isCoop:!!isCoop,mode:mode==="demo"?"DEMO":isCoop?"CO-OP":"SOLO",clues:Number(clues)||sharedClues.size||0,date:new Date().toISOString().slice(0,10)};
+ const entry={id:key,deviceId:key,names:String(names||cp||"GUEST").toUpperCase().slice(0,40),timeSec:sec,isCoop:!!isCoop,mode:isCoop?"CO-OP":"SOLO",date:new Date().toISOString().slice(0,10)};
  const improved=mergeLeaderboardEntry(entry);
  if(broadcast&&improved){
   ra&&_A.sendAction("ledger_record",entry);
@@ -4754,8 +4789,11 @@ function renderSpeedrunLedger(filter=currentLedgerFilter){
  for(const tab of document.querySelectorAll(".ledger-tab"))tab.classList.toggle("active",tab.dataset.filter===currentLedgerFilter);
  const combined=new Map;
  for(const r of loadSpeedrunLedger())combined.set(r.deviceId||r.id||`${r.names}_${r.timeSec}_${r.date}`,r);
- for(const[k,r]of _lbGlobalMap.entries())combined.set(k,r);
- const all=[...combined.values()].filter(r=>currentLedgerFilter==="coop"?r.isCoop:currentLedgerFilter==="solo"?!r.isCoop:!0).sort((a,b)=>a.timeSec-b.timeSec);
+ for(const[k,r]of _lbGlobalMap.entries()){
+  const prev=combined.get(k);
+  if(!prev||r.timeSec<prev.timeSec)combined.set(k,r);
+ }
+ const all=[...combined.values()].filter(r=>String(r.mode||"").toLowerCase()!=="demo"&&(currentLedgerFilter==="coop"?r.isCoop:currentLedgerFilter==="solo"?!r.isCoop:!0)).sort((a,b)=>a.timeSec-b.timeSec);
  const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  if(all.length===0){box.innerHTML=`<p class="public-parties-empty">No escapes recorded yet. Complete a run to claim #01!</p>`;return}
  box.innerHTML=all.map((r,idx)=>{
