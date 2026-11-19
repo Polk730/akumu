@@ -115,6 +115,76 @@ body[data-reception]:not([data-reception=title]) #menu #menu-ledger-btn{visibili
 .ending-coop-title{color:#ebd79a;font-size:11px;letter-spacing:.16em}
 .ending-coop-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:11px;color:#bfb8a3}
 .ending-coop-grid span strong{color:#ece5d1}
+
+/* === 1986 MULTIPLAYER UI OVERHAUL === */
+/* Reception Waiting Table: keep UI ultra-clean (Code, Seats, Actions, Chat only) */
+body[data-reception] #emote-wheel-btn,
+body[data-reception] #walkie-btn,
+body[data-reception] #clipboard-open-btn{display:none!important}
+#lobby-hud{padding:max(14px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+#lobby-hud .lobby-header .eyebrow{font-size:9px;letter-spacing:.26em;margin:0 0 5px;opacity:.82}
+#lobby-hud .lobby-code-row{gap:8px;padding:5px 12px;background:#090d0bd9;border:1px solid #d8c89648;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:11px;letter-spacing:.16em}
+#lobby-hud .lobby-code-row strong{font-size:15px;letter-spacing:.22em;color:#f5e6b8}
+#lobby-hud #lobby-copy-code{padding:3px 8px;font-size:9px;letter-spacing:.14em}
+#lobby-hud #lobby-status-text{margin:6px 0 0;font-size:10px;letter-spacing:.1em;color:#bfb8a3;opacity:.88}
+#lobby-hud #lobby-seats-bar{gap:7px;margin-bottom:8px}
+#lobby-hud .lobby-seat-tag{min-width:122px;padding:6px 10px;background:#080c0ac9;border:1px solid #c1b79633;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);font-size:10px}
+#lobby-hud .lobby-seat-tag.occupied{background:#0e1512db;border-color:#d8c89666}
+#lobby-hud .lobby-seat-tag strong{font-size:11px;letter-spacing:.1em}
+#lobby-hud .seat-style-sub{font-size:8px;opacity:.75;margin-top:1px}
+#lobby-hud .seat-badge-row{margin-top:3px}
+#lobby-hud .seat-ready-badge{padding:1px 6px;font-size:8px}
+#lobby-hud .seat-host-controls{margin-top:4px;gap:4px}
+#lobby-hud .seat-host-btn,#lobby-hud .seat-kick-btn{padding:2px 6px;font-size:8px}
+#lobby-hud .lobby-actions{gap:8px;margin-bottom:0}
+#lobby-hud .lobby-actions button{min-height:34px;padding:7px 16px;font-size:11px;letter-spacing:.15em;background:#0b100ee0;border-color:#c1b79655;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+
+/* Compact 1986 Multiplayer HUD Bar (Chat, Emotes, Walkie, Clues) */
+#game-chat{left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));width:auto;max-width:min(480px,92vw);gap:5px}
+#chat-messages{max-width:300px;max-height:118px;gap:3px}
+.chat-line{padding:4px 8px;background:#080c0ac4;border-left:2px solid #d8c89677;font-size:10px;line-height:1.35;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#chat-form{max-width:310px;padding:4px;gap:4px;background:#0a0f0df0;border-color:#c1b79666}
+#chat-input{padding:6px 8px;font-size:11px}
+#chat-form button{min-height:30px;padding:5px 10px;font-size:10px}
+.mp-hud-row{display:inline-flex;align-items:center;flex-wrap:nowrap;gap:4px;pointer-events:none}
+#chat-open-btn,#emote-wheel-btn,#walkie-btn,#clipboard-open-btn{align-self:auto;pointer-events:auto;touch-action:manipulation;min-height:28px;height:28px;padding:0 9px;background:#0a0f0dd6;border:1px solid #c1b79644;color:#dfd7c0;font:700 10px/1 Courier New,monospace;letter-spacing:.12em;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 3px 10px #0007;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:border-color .14s,color .14s,background .14s,transform .14s}
+#chat-open-btn:hover,#emote-wheel-btn:hover,#walkie-btn:hover,#clipboard-open-btn:hover,
+#chat-open-btn:focus-visible,#emote-wheel-btn:focus-visible,#walkie-btn:focus-visible,#clipboard-open-btn:focus-visible{border-color:#ebd79a;color:#fff8e4;background:#151f1af0;transform:translateY(-1px)}
+.chat-key-hint{font-weight:400;font-size:9px;color:#a89f88;letter-spacing:.08em}
+
+/* Sleek Compact 1986 Noir Emote Wheel */
+#emote-wheel{background:radial-gradient(circle at 50% 50%,#090e0b7a,#04070638 52%,transparent 80%);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.ew-header{width:min(280px,74vw);margin-bottom:4px;text-align:center}
+.ew-title{font:700 13px/1.2 Courier New,monospace;letter-spacing:.28em;color:#dfd7c0;text-shadow:0 2px 10px #000c;border-bottom:1px solid #d8c89640;padding-bottom:5px}
+#ew-selected-name{margin:5px 0 0;font:700 11px/1 Courier New,monospace;letter-spacing:.22em;color:#f2dfa4;min-height:12px;text-shadow:0 1px 8px #000}
+.ew-svg{width:min(276px,72vw);height:min(276px,72vw);filter:drop-shadow(0 12px 32px #000a)}
+.ew-wedge{fill:#0c110fe0;stroke:#d8c89644;stroke-width:1.4}
+.ew-silhouette path{fill:#e8dfc8;stroke:#e8dfc8;stroke-width:1.4}
+.ew-slice.active,.ew-slice:hover{transform:scale(1.04);filter:drop-shadow(0 0 12px #ebd79a44)}
+.ew-slice.active .ew-wedge,.ew-slice:hover .ew-wedge{fill:#262114f2;stroke:#f5e4ad;stroke-width:2}
+.ew-slice.active .ew-silhouette path,.ew-slice:hover .ew-silhouette path{fill:#fff8e0;stroke:#fff8e0}
+.ew-mini-seg{fill:#141c18cc}
+.ew-mini-seg.active{fill:#f5e4ad}
+#ew-center-num{fill:#f5e4ad;font:700 20px/1 Courier New,monospace}
+
+/* Sleek Compact Evidence Clipboard */
+#evidence-clipboard{background:#050807a8;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:14px}
+.clipboard-board{width:min(440px,90vw);max-height:74dvh;padding:16px 12px 12px;border-width:2px;box-shadow:0 18px 60px #000d,inset 0 0 18px #0008}
+.clipboard-clip{top:-11px;width:124px;height:21px;font-size:8px;letter-spacing:.2em}
+.clipboard-paper{padding:14px 14px 12px;max-height:64dvh}
+.clipboard-header{padding-bottom:7px;margin-bottom:8px}
+.clipboard-header h2{font-size:15px}
+.clipboard-eyebrow{font-size:9px}
+.clipboard-stamp{padding:2px 6px;font-size:9px}
+.clipboard-section-title{margin:8px 0 5px;font-size:10px}
+.clipboard-clue-card{padding:6px 9px}
+.clipboard-clue-title{font-size:12px}
+.clipboard-clue-detail{font-size:11px}
+.clipboard-note-card{padding:5px 8px;font-size:11px}
+#clipboard-note-form{margin-top:8px;padding-top:8px;gap:6px}
+#clipboard-note-input{padding:6px 8px;font-size:11px}
+#clipboard-note-submit,#clipboard-close-btn{padding:6px 11px;font-size:10px}
+.clipboard-footer{margin-top:8px;padding-top:6px;font-size:9px;gap:8px}
 </style></head>
 <body>
 <canvas id="world" tabindex="-1" aria-label="AKUMU first person abandoned bedroom"></canvas>
@@ -237,10 +307,6 @@ body[data-reception]:not([data-reception=title]) #menu #menu-ledger-btn{visibili
   <p class="eyebrow" id="lobby-table-eyebrow">RECEPTION WAITING TABLE</p>
   <div class="lobby-code-row"><span>LOBBY CODE: <strong id="lobby-code-display">----</strong></span><button id="lobby-copy-code" type="button">COPY</button></div>
   <p id="lobby-status-text">Waiting for guests (1 / 4) — Need at least 2 players to start</p>
- </div>
- <div id="lobby-custom-bar" aria-label="1986 Character Customization">
-  <button id="lobby-coat-btn" class="lobby-custom-btn" type="button">🧥 COAT: <strong id="lobby-coat-label">OBSIDIAN</strong></button>
-  <button id="lobby-acc-btn" class="lobby-custom-btn" type="button">🎩 HEADGEAR: <strong id="lobby-acc-label">FEDORA</strong></button>
  </div>
  <div id="lobby-seats-bar" aria-live="polite"></div>
  <div class="lobby-actions">
