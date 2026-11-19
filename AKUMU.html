@@ -185,6 +185,24 @@ body[data-reception] #clipboard-open-btn{display:none!important}
 #clipboard-note-input{padding:6px 8px;font-size:11px}
 #clipboard-note-submit,#clipboard-close-btn{padding:6px 11px;font-size:10px}
 .clipboard-footer{margin-top:8px;padding-top:6px;font-size:9px;gap:8px}
+
+/* === MINIMAL EMOJI HUD BOXES & BLANK INTERACTIVE CLIPBOARD === */
+.mp-hud-row{gap:5px}
+#chat-open-btn,#emote-wheel-btn,#walkie-btn,#clipboard-open-btn{width:34px;height:34px;min-height:34px;padding:0;justify-content:center;font-size:16px;line-height:1;border-radius:4px;background:#0a0f0dd9;border:1px solid #c1b79648;box-shadow:0 3px 10px #0008}
+#chat-open-btn:hover,#emote-wheel-btn:hover,#walkie-btn:hover,#clipboard-open-btn:hover{border-color:#ebd79a;background:#16201bf2;transform:translateY(-1px)}
+.clipboard-board{width:min(420px,90vw);padding:16px 12px 12px;border-radius:4px}
+.clipboard-clip{width:110px;height:20px;top:-10px;border-radius:3px 3px 0 0}
+.clipboard-paper{position:relative;width:100%;aspect-ratio:420/520;max-height:76dvh;padding:0;overflow:hidden;cursor:crosshair;user-select:none;-webkit-user-select:none;background:repeating-linear-gradient(0deg,#ede3cb 0 25px,#d3c6ab 25px 26px)}
+#clipboard-draw-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;touch-action:none}
+#clipboard-pins-layer{position:absolute;top:10px;left:10px;right:10px;z-index:3;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.clip-pin-slip{position:relative;max-width:190px;padding:7px 9px 6px;background:#f9f3e3f2;border:1px solid #8a785c88;box-shadow:0 3px 8px #0003;transform:rotate(-1deg);font-family:Courier New,monospace;color:#241c13}
+.clip-pin-slip:nth-child(even){transform:rotate(1.1deg)}
+.clip-pin-dot{position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#9e2a22;box-shadow:0 1px 3px #0006}
+.clip-pin-slip strong{display:block;font-size:10px;letter-spacing:.08em;color:#5c2019;margin-bottom:2px}
+.clip-pin-slip span{display:block;font-size:9px;line-height:1.3;color:#382d20}
+#clipboard-text-layer{position:absolute;inset:0;z-index:4;pointer-events:none}
+.clip-written-note{position:absolute;font:italic 15px/1.25 Georgia,serif;color:#1f1912;white-space:pre-wrap;max-width:210px;text-shadow:0 1px 0 #fff5}
+#clipboard-inline-input{position:absolute;z-index:5;width:180px;padding:1px 3px;background:#f7f0dca8;border:0;border-bottom:1px dashed #6b5840;outline:none;font:italic 15px/1.25 Georgia,serif;color:#1f1912}
 </style></head>
 <body>
 <canvas id="world" tabindex="-1" aria-label="AKUMU first person abandoned bedroom"></canvas>
@@ -267,29 +285,14 @@ body[data-reception] #clipboard-open-btn{display:none!important}
   <button id="menu-ledger-close" type="button">CLOSE</button>
  </div>
 </section>
-<section id="evidence-clipboard" hidden role="dialog" aria-modal="true" aria-labelledby="clipboard-title">
+<section id="evidence-clipboard" hidden role="dialog" aria-modal="true" aria-label="Evidence Clipboard">
  <div class="clipboard-board">
-  <div class="clipboard-clip">1986 BRASS CLIP</div>
-  <div class="clipboard-paper">
-   <div class="clipboard-header">
-    <div>
-     <p class="clipboard-eyebrow">HOTEL INVESTIGATION / SHARED RECORD</p>
-     <h2 id="clipboard-title">EVIDENCE CLIPBOARD</h2>
-    </div>
-    <span class="clipboard-stamp">CONFIDENTIAL</span>
-   </div>
-   <div class="clipboard-section-title">PINNED ROOM CLUES (<span id="clipboard-clue-count">0</span>)</div>
-   <div id="clipboard-clues-list" aria-live="polite"></div>
-   <div class="clipboard-section-title">SQUAD FIELD NOTES</div>
-   <div id="clipboard-notes-list" aria-live="polite"></div>
-   <form id="clipboard-note-form">
-    <input id="clipboard-note-input" type="text" maxlength="110" autocomplete="off" spellcheck="false" placeholder="Scribble a clue or code for the squad...">
-    <button id="clipboard-note-submit" type="submit">PIN NOTE</button>
-   </form>
-   <div class="clipboard-footer">
-    <span>PRESS [TAB] OR [ESC] TO STOW CLIPBOARD · PRESS [G] LOOKING AT TEAMMATE TO PASS ITEM</span>
-    <button id="clipboard-close-btn" type="button">CLOSE</button>
-   </div>
+  <div class="clipboard-clip" aria-hidden="true"></div>
+  <div id="clipboard-paper" class="clipboard-paper">
+   <div id="clipboard-pins-layer"></div>
+   <canvas id="clipboard-draw-canvas" width="420" height="520"></canvas>
+   <div id="clipboard-text-layer"></div>
+   <input id="clipboard-inline-input" type="text" maxlength="80" autocomplete="off" spellcheck="false" hidden>
   </div>
  </div>
 </section>
@@ -330,7 +333,7 @@ body[data-reception] #clipboard-open-btn{display:none!important}
 <div id="game-chat" hidden aria-live="polite">
  <div id="chat-messages"></div>
  <form id="chat-form" hidden><input id="chat-input" type="text" maxlength="140" autocomplete="off" spellcheck="false" placeholder="Type message..."><button type="submit">SEND</button><button id="chat-close-btn" type="button" aria-label="Close chat">✕</button></form>
- <div class="mp-hud-row"><button id="chat-open-btn" type="button">💬 CHAT <span class="chat-key-hint">· ENTER</span></button><button id="emote-wheel-btn" type="button" title="Emote Wheel (B)">🎭 EMOTES <span class="chat-key-hint">· B</span></button><button id="walkie-btn" type="button" title="1986 Walkie-Talkie Proximity Radio">📻 WALKIE <span class="chat-key-hint" id="walkie-key-hint">· OPEN</span></button><button id="clipboard-open-btn" type="button" title="Shared Evidence Clipboard (TAB)">📋 CLUES <span class="chat-key-hint">· TAB</span></button></div>
+ <div class="mp-hud-row"><button id="chat-open-btn" type="button" title="Chat (Enter)" aria-label="Chat">💬</button><button id="emote-wheel-btn" type="button" title="Emotes (B)" aria-label="Emotes">🎭</button><button id="walkie-btn" type="button" title="Walkie-Talkie (M / Hold V)" aria-label="Walkie-Talkie">📻</button><button id="clipboard-open-btn" type="button" title="Clipboard (TAB)" aria-label="Clipboard">📋</button></div>
 </div>
 <section id="game-loading" hidden aria-labelledby="loading-title" aria-busy="true">
  <div class="loading-card"><p class="eyebrow">HOTEL ADMINISTRATION / 1986</p><h2 id="loading-title">ARRIVAL RECORD</h2><p id="loading-status" role="status" aria-live="polite">Preparing the room...</p><progress id="loading-progress" max="1" value="0" aria-label="Game loading progress"></progress><button id="loading-retry" type="button" hidden>TRY AGAIN</button></div>
@@ -4414,7 +4417,7 @@ function playWalkieSquelch(open=!0,vol=1){
  osc.connect(og).connect(xt.sfx||a.destination),osc.start(now),osc.stop(now+dur*.8);
 }
 function updateWalkieUI(){
- const btn=f("walkie-btn"),hint=f("walkie-key-hint");if(!btn||!hint)return;
+ const btn=f("walkie-btn"),hint=f("walkie-key-hint");if(!btn)return;
  const isPtt=(Ea.micMode||"OPEN")==="PTT";
  const active=ra&&ct!=="menu"&&(isPtt?walkieState.pttDown:!walkieState.muted);
  if(active!==walkieState.transmitting){
@@ -4427,7 +4430,7 @@ function updateWalkieUI(){
  }
  btn.classList.toggle("tx-active",active);
  btn.classList.toggle("tx-muted",!active);
- hint.textContent=isPtt?(active?"· TX [V]":"· HOLD V"):(active?"· OPEN [M]":"· MUTED [M]");
+ const stTxt=isPtt?(active?"TX [V]":"HOLD V"):(active?"OPEN [M]":"MUTED [M]");hint&&(hint.textContent="· "+stTxt),btn.title="Walkie-Talkie ("+stTxt+")";
  if(active&&ra&&!walkieState.stream&&!walkieState.asking&&navigator.mediaDevices?.getUserMedia){
   walkieState.asking=!0;
   navigator.mediaDevices.getUserMedia({audio:{echoCancellation:!0,noiseSuppression:!0,autoGainControl:!0}}).then(st=>{
@@ -4488,36 +4491,109 @@ function playClipboardSound(kind="open"){
   hi.connect(hg).connect(xt.sfx||a.destination),hi.start(now+.02),hi.stop(now+.1);
  }
 }
+const sharedStrokes=[];
+function drawStrokeOnClipboard(st){
+ const cv=f("clipboard-draw-canvas");if(!cv||!st?.pts?.length)return;
+ const cx=cv.getContext("2d");if(!cx)return;
+ cx.save();
+ if(st.erase){cx.globalCompositeOperation="destination-out",cx.lineWidth=18}
+ else{cx.globalCompositeOperation="source-over",cx.strokeStyle="#241c14",cx.lineWidth=2.3}
+ cx.lineCap="round",cx.lineJoin="round",cx.beginPath();
+ cx.moveTo(st.pts[0][0],st.pts[0][1]);
+ for(let i=1;i<st.pts.length;i++)cx.lineTo(st.pts[i][0],st.pts[i][1]);
+ cx.stroke(),cx.restore();
+}
+function redrawClipboardCanvas(){
+ const cv=f("clipboard-draw-canvas");if(!cv)return;
+ const cx=cv.getContext("2d");if(!cx)return;
+ cx.clearRect(0,0,cv.width,cv.height);
+ for(const st of sharedStrokes)drawStrokeOnClipboard(st);
+}
 function renderEvidenceClipboard(){
- const cList=f("clipboard-clues-list"),nList=f("clipboard-notes-list"),cnt=f("clipboard-clue-count");
- if(!cList||!nList)return;
+ const pins=f("clipboard-pins-layer"),txtLayer=f("clipboard-text-layer");
+ if(!pins||!txtLayer)return;
  const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
- cnt&&(cnt.textContent=String(sharedClues.size));
- if(sharedClues.size===0){
-  cList.innerHTML=`<div class="clipboard-clue-card"><span class="clipboard-clue-detail">No clues pinned yet. Inspect letters, photos, terminals, tapes, or schematics to auto-record evidence.</span></div>`;
- }else{
-  cList.innerHTML=[...sharedClues.values()].map(c=>`<div class="clipboard-clue-card"><div class="clipboard-clue-top"><span>${esc(c.room)}</span><span>LOGGED BY ${esc(c.by||"GUEST")}</span></div><strong class="clipboard-clue-title">${esc(c.title)}</strong><p class="clipboard-clue-detail">${esc(c.detail)}</p></div>`).join("");
- }
- if(sharedNotes.length===0){
-  nList.innerHTML=`<div class="clipboard-note-card">No custom field notes yet. Scribble a code or reminder below!</div>`;
- }else{
-  nList.innerHTML=sharedNotes.map(n=>`<div class="clipboard-note-card"><strong>${esc(n.author)}:</strong> ${esc(n.text)}</div>`).join("");
- }
+ pins.innerHTML=[...sharedClues.values()].map(c=>`<div class="clip-pin-slip"><span class="clip-pin-dot"></span><strong>${esc(c.title)}</strong><span>${esc(c.detail)}</span></div>`).join("");
+ txtLayer.innerHTML=sharedNotes.map(n=>{
+  const x=Number.isFinite(n.x)?n.x:26,y=Number.isFinite(n.y)?n.y:(110+((sharedNotes.indexOf(n)*26)%340));
+  return`<div class="clip-written-note" style="left:${x}px;top:${y}px">${esc(n.text)}</div>`;
+ }).join("");
+ redrawClipboardCanvas();
 }
 function pinSharedClue(id,room,title,detail,by=cp||"GUEST",broadcast=!0){
  if(!id||sharedClues.has(id))return!1;
  const entry={id,room,title,detail,by};
  sharedClues.set(id,entry),renderEvidenceClipboard(),playClipboardSound("pin");
- broadcast&&(nq(`📋 Clue Pinned: ${title}`),ra&&_A.sendAction("clue_pin",entry));
+ broadcast&&(nq(`📋 Pinned: ${title}`),ra&&_A.sendAction("clue_pin",entry));
  return!0;
 }
-function addSharedNote(author,text,broadcast=!0){
- const clean=String(text||"").trim().slice(0,110);if(!clean)return!1;
- const entry={author:author||cp||"GUEST",text:clean,ts:Date.now()};
- sharedNotes.push(entry);while(sharedNotes.length>16)sharedNotes.shift();
+function addSharedNote(author,text,broadcast=!0,x=null,y=null){
+ const clean=String(text||"").trim().slice(0,80);if(!clean)return!1;
+ const entry={author:author||cp||"GUEST",text:clean,x:Number.isFinite(x)?x:28,y:Number.isFinite(y)?y:120+sharedNotes.length*26,ts:Date.now()};
+ sharedNotes.push(entry);while(sharedNotes.length>24)sharedNotes.shift();
  renderEvidenceClipboard(),playClipboardSound("pin");
  broadcast&&(ra&&_A.sendAction("clue_note",entry));
  return!0;
+}
+function addSharedStroke(st,broadcast=!0){
+ if(!st?.pts?.length)return;
+ sharedStrokes.push(st);while(sharedStrokes.length>140)sharedStrokes.shift();
+ drawStrokeOnClipboard(st);
+ broadcast&&ra&&_A.sendAction("clue_draw",st);
+}
+let _clipInit=!1;
+function initBlankClipboardInteraction(){
+ if(_clipInit)return;
+ const paper=f("clipboard-paper"),cv=f("clipboard-draw-canvas"),inp=f("clipboard-inline-input");
+ if(!paper||!cv||!inp)return;
+ _clipInit=!0;
+ let drawing=!1,moved=!1,erasing=!1,downPt=null,curPts=[];
+ const getPt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*(cv.width/r.width),(e.clientY-r.top)*(cv.height/r.height)]};
+ const commitInline=()=>{
+  if(inp.hidden)return;
+  const val=inp.value.trim(),x=parseFloat(inp.dataset.x)||28,y=parseFloat(inp.dataset.y)||120;
+  inp.hidden=!0,inp.value="";
+  val&&addSharedNote(cp||"GUEST",val,!0,x,y);
+ };
+ inp.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault(),commitInline()}
+  else if(e.key==="Escape"){e.preventDefault(),e.stopPropagation(),inp.hidden=!0,inp.value=""}
+ });
+ inp.addEventListener("blur",commitInline);
+ cv.addEventListener("contextmenu",e=>e.preventDefault());
+ cv.addEventListener("pointerdown",e=>{
+  e.stopPropagation();
+  if(!inp.hidden)commitInline();
+  const pt=getPt(e);
+  drawing=!0,moved=!1,erasing=e.button===2,downPt=pt,curPts=[pt];
+  cv.setPointerCapture?.(e.pointerId);
+ });
+ cv.addEventListener("pointermove",e=>{
+  if(!drawing)return;
+  const pt=getPt(e);
+  if(!moved&&Math.hypot(pt[0]-downPt[0],pt[1]-downPt[1])>4)moved=!0;
+  if(moved){
+   const prev=curPts[curPts.length-1];
+   curPts.push(pt);
+   drawStrokeOnClipboard({pts:[prev,pt],erase:erasing});
+  }
+ });
+ const finishDraw=e=>{
+  if(!drawing)return;
+  drawing=!1;
+  if(moved&&curPts.length>1){
+   addSharedStroke({pts:curPts,erase:erasing},!0);
+  }else if(!erasing&&downPt){
+   const r=paper.getBoundingClientRect();
+   const lx=Math.max(12,Math.min(r.width-150,(downPt[0]/cv.width)*r.width));
+   const ly=Math.max(14,Math.min(r.height-32,(downPt[1]/cv.height)*r.height));
+   inp.dataset.x=String(Math.round(lx)),inp.dataset.y=String(Math.round(ly));
+   inp.style.left=lx+"px",inp.style.top=ly+"px",inp.hidden=!1,inp.value="",inp.focus();
+  }
+  curPts=[];
+ };
+ cv.addEventListener("pointerup",finishDraw);
+ cv.addEventListener("pointercancel",finishDraw);
 }
 function toggleClipboard(force){
  const el=f("evidence-clipboard");if(!el)return;
@@ -4525,9 +4601,10 @@ function toggleClipboard(force){
  if(open&&ct==="menu")return;
  el.hidden=!open,playClipboardSound(open?"open":"close");
  if(open){
-  renderEvidenceClipboard(),La(),document.pointerLockElement===qa&&(tp=!1,document.exitPointerLock()),setTimeout(()=>f("clipboard-note-input")?.focus(),40);
- }else if(ct==="playing"&&!pa){
-  Ql();
+  initBlankClipboardInteraction(),renderEvidenceClipboard(),La(),document.pointerLockElement===qa&&(tp=!1,document.exitPointerLock());
+ }else{
+  const inp=f("clipboard-inline-input");if(inp&&!inp.hidden){inp.blur()}
+  ct==="playing"&&!pa&&Ql();
  }
 }
 const LEDGER_KEY="akumu_leaderboard_v2";
@@ -4620,6 +4697,7 @@ function buildGameSnapshot(){
   seedCode:_A.code||"AKUMU",
   clues:[...sharedClues.values()],
   notes:[...sharedNotes],
+  strokes:[...sharedStrokes],
   r1:{drawer:sA.state.drawer,drawerOpen:!!RA.targets.find(a=>a.kind==="drawer")?.open,digits:[...sA.state.digits],hammer:sA.state.hammer,barricade:sA.state.barricade,key:sA.state.key,door:sA.state.door},
   r2:{seq:AA.terminal.puzzle.sequence,powered:AA.terminal.puzzle.powered,s1:AA.terminal.puzzle.completed,s2:AA.terminal.puzzle.stageTwoCompleted,s3:AA.terminal.puzzle.stageThreeCompleted,boxes:AA.terminal.stack.boxes.map(b=>({...b})),opened:[...AA.terminal.escape.opened],wrench:sA.state.wrench,ventOpen:AA.vent.isOpen},
   r3:LA?{tapes:LA.model.tapes.map(t=>({...t})),slots:[...LA.model.slots],player:LA.model.player,playing:LA.model.playing,solved:LA.model.solved,doorOpen:LA.model.doorOpen}:null,
@@ -4629,7 +4707,8 @@ function buildGameSnapshot(){
 function applyGameSnapshot(snap){
  if(!snap||!RA||!AA||!sA)return;
  if(Array.isArray(snap.clues)){for(const c of snap.clues)c?.id&&sharedClues.set(c.id,c);renderEvidenceClipboard()}
- if(Array.isArray(snap.notes)){sharedNotes.length=0,sharedNotes.push(...snap.notes.slice(-16)),renderEvidenceClipboard()}
+ if(Array.isArray(snap.notes)){sharedNotes.length=0,sharedNotes.push(...snap.notes.slice(-24)),renderEvidenceClipboard()}
+ if(Array.isArray(snap.strokes)){sharedStrokes.length=0,sharedStrokes.push(...snap.strokes.slice(-140)),redrawClipboardCanvas()}
  if(snap.r1){
   const r1=snap.r1,dr=RA.targets.find(a=>a.kind==="drawer");
   Array.isArray(r1.digits)&&(sA.state.digits=[...r1.digits]);
@@ -4716,7 +4795,7 @@ const _A=new dR({onPlayersChange(p,t,A,isPub,pName){
  }else if(snap){
   applyGameSnapshot(snap),_pendingLateJoinSnap=null;
  }
-},onGameStart(p){if(ct!=="menu")return;let seed=1986;for(const ch of(_A.code||"AKUMU"))seed=(seed*31+ch.charCodeAt(0))|0;window.__AKUMU_RNG__=ua(seed),AA?.terminal?.puzzle?.reseed&&(AA.terminal.puzzle.reseed(ua(seed)),AA.terminal.refreshScreen()),f("lobby-hud").hidden=!0,Gp.inert=!1,Ua.sound.bell(),qS(),p.forEach((A,a)=>Pi(A,a));const t=p.find(A=>A.id===_A.id);t?.name&&(cp=t.name),rS=p.map(A=>A.name).join(" & ").slice(0,24),Di()},onRemoteState(p){sS(p)},onRemoteAction({action:p,payload:t}){if(!(!RA||!AA||!sA)){const who=t?.name||"Teammate";if(p==="wheel"&&Number.isInteger(t?.index)){sA.turnWheel(t.index),Array.isArray(t.digits)&&t.digits.length===4&&(sA.state.digits=[...t.digits]);if(sA.state.digits.join("")==="7482"&&sA.state.drawer==="locked"){sA.state.drawer="unlocked",xt.unlock(),nq(`${who} unlocked the combination lock!`)}}else if(p==="room1_state"&&t){const dr=RA.targets.find(a=>a.kind==="drawer");if(Array.isArray(t.digits)&&t.digits.length===4&&(sA.state.digits=[...t.digits]),t.drawer==="unlocked"&&sA.state.drawer==="locked"&&(sA.state.drawer="unlocked",xt.unlock(),nq(`${who} unlocked the drawer!`)),t.drawer==="open"&&sA.state.drawer!=="open"&&(dr&&(dr.open=!0),sA.state.drawer="open",sA.hammer.visible=sA.state.hammer==="available",xt.drawer(),nq(`${who} opened the drawer.`)),t.hammer==="carried"&&sA.state.hammer==="available"&&(sA.state.hammer="remote",sA.hammer.visible=!1,nq(`${who} picked up the hammer.`)),(t.barricade==="removing"||t.barricade==="removed"||t.act==="window"||t.act==="window_cleared")&&sA.state.barricade==="intact"){sA.state.barricade="removed";const idx=RA.boxes.indexOf(RA.windowObstacle);idx>=0&&RA.boxes.splice(idx,1),RA.boards.forEach((Gt,H)=>{Gt.position.set(.35+H*.045,.042,-.84+H*.17),Gt.rotation.set(Math.PI/2,0,0)}),sA.state.key!=="collected"&&(sA.state.key="available",sA.keyGroup.visible=!0),xt.fall(),nq(`${who} broke the window barricade!`)}if(t.key==="collected"&&sA.state.key!=="collected"&&(sA.state.key="collected",sA.key&&(sA.key.visible=!1),sA.keyGroup&&(sA.keyGroup.visible=!1),xt.key(),nq(`${who} collected the bedroom key!`)),(t.door==="open"||t.door==="opening"||t.door==="locked-behind")&&sA.state.door==="locked"){sA.state.door="open",RA.door.rotation.y=1.22,Km(),xt.unlock(),xt.doorCreak(),nq(`${who} unlocked the bedroom door!`)}}else if(p==="pc_stage"&&t){const pz=AA.terminal.puzzle;t.seq&&(pz.sequence=t.seq);if(t.stage==="power"&&!pz.powered)pz.powerOn(),nq(`${who} powered on the storage terminal.`);else if(t.stage==="stage1"&&!pz.completed)pz.powered=!0,pz.completed=!0,pz.assistance.start(),nq(`${who} solved Terminal Stage 1 (Box 1 unlocked)!`);else if(t.stage==="stage2"&&!pz.stageTwoCompleted)pz.powered=!0,pz.completed=!0,pz.stageTwoCompleted=!0,pz.assistance.complete(),nq(`${who} solved Terminal Stage 2 (Box 2 unlocked)!`);else if(t.stage==="stage3"&&!pz.stageThreeCompleted)pz.powered=!0,pz.completed=!0,pz.stageTwoCompleted=!0,pz.passwordRecovery.completed=!0,nq(`${who} solved Terminal Stage 3 (All boxes unlocked)!`);AA.terminal.refreshScreen(),AA.terminal.refreshBoxes(),zi?.refresh?.(),ft.shadowMap.needsUpdate=!0}else if(p==="box_sync"&&Array.isArray(t?.boxes)){for(const rb of t.boxes){const lb=AA.terminal.stack.get(rb.id);lb&&AA.terminal.stack.heldId!==rb.id&&Object.assign(lb,{x:rb.x,y:rb.y,z:rb.z,placement:rb.placement==="carried"?"Remote":rb.placement,support:rb.support})}AA.terminal.refreshBoxes(),ft.shadowMap.needsUpdate=!0,t.act==="drop"&&nq(`${who} placed Box ${t.id}.`)}else if(p==="open_box"&&t?.id){const bx=AA.terminal.stack.get(t.id);bx&&bx.placement==="Remote"&&(bx.placement="floor"),AA.terminal.escape.opened.add(t.id),t.id===1&&(AA.terminal.crates[0].root.getObjectByName("reserved-wrench").visible=sA.state.wrench!=="carried"),AA.terminal.refreshBoxes(),xt.fall(),ft.shadowMap.needsUpdate=!0,nq(`${who} opened Box ${t.id}!`)}else if(p==="wrench"){AA.terminal.escape.opened.add(1),AA.terminal.collectWrench(sA.state),AA.terminal.crates[0].root.getObjectByName("reserved-wrench").visible=!1,xt.pickup(),ft.shadowMap.needsUpdate=!0,nq(`${who} collected the wrench!`)}else if(p==="vent_open"){AA.vent.openWithTool({kind:"wrench"}),xt.door(),ft.shadowMap.needsUpdate=!0,nq(`${who} opened the ventilation grille!`)}else if(p==="obs_sync"&&t){const obs=Rq();if(Array.isArray(t.tapes))t.tapes.forEach((rt,idx)=>{const lt=obs.model.tapes[idx];lt&&obs.model.held!==idx&&Object.assign(lt,{x:rt.x,y:rt.y,z:rt.z,place:rt.place==="held"?"world":rt.place,falling:!1})});if(Array.isArray(t.slots))obs.model.slots=[...t.slots];obs.model.player=t.player,obs.model.playing=!!t.playing,t.player!==null&&(obs.model.lastRecording=t.player),t.solved&&!obs.model.solved&&(obs.model.solved=!0,obs.model.solvedAt=obs.model.time,obs.model.events.live=!0,obs.model.status="ARCHIVE RESTORED",nq(`${who} restored the VHS archive!`)),t.doorOpen&&!obs.model.doorOpen&&(obs.model.doorOpen=!0,nq(`${who} opened the observation exit!`)),ft.shadowMap.needsUpdate=!0}else if(p==="washer_toggle"&&iA&&Number.isInteger(t?.machineId)){const m=iA.puzzle.machines[t.machineId];m&&(m.open=!!t.open,iA.syncVisuals(gt,0,!1),ft.shadowMap.needsUpdate=!0)}else if(p==="washer_repaired"&&iA){const broken=iA.puzzle.machines[iA.puzzle.brokenId];broken&&(broken.locked=!1,broken.missingKnob=!1,broken.fixed=!0,broken.open=!0),iA.puzzle.knob="installed",iA.puzzle.machines[3].locked=!1,iA.puzzle.machines[3].open=!0,$a.open(),iA.syncVisuals(gt,0,!1),xt.unlock(),ft.shadowMap.needsUpdate=!0,nq(`${who} repaired the washing machine & opened the chute!`)}else if(p==="knob_picked"&&iA){iA.puzzle.knob="remote",iA.syncVisuals(null,0,!1),iA.spareKnobGroup.visible=!1,ft.shadowMap.needsUpdate=!0,pinSharedClue("laundry_knob","LAUNDRY","SPARE WASHER KNOB","Retrieved from the donor washing machine drum.",who,!1),nq(`${who} found the spare control knob!`)}else if(p==="knob_dropped"&&iA){iA.puzzle.knob="dropped",iA.spareKnobGroup.position.set(t.x,t.y,t.z),iA.spareKnobGroup.visible=!0,iA.syncVisuals(null,0,!1),ft.shadowMap.needsUpdate=!0,nq(`${who} dropped the control knob.`)}else if(p==="stair_key"&&iA){iA.puzzle.collectStairKey(),iA.basement.stairKeyGroup.visible=!1,xt.key(),ft.shadowMap.needsUpdate=!0,nq(`${who} collected the laundry exit key!`)}else if(p==="main_exit_open"&&iA){iA.puzzle.mainDoorLocked=!1,iA.puzzle.mainDoorOpen=!0,iA.basement.openExitDoor(),xt.unlock(),xt.doorCreak(),ft.shadowMap.needsUpdate=!0,nq(`${who} unlocked the main exit door!`)}else if(p==="room_enter"&&t?.room){syncTeamRoom(t.room,who)}else if(p==="walkie_tx"&&t){const A=Pi({id:t.id,name:t.name||"GUEST"});if(A&&!!t.tx!==!!A.talking){A.talking=!!t.tx,A.figure.showChat(A.talking?"[📻 RADIO]":"",A.talking?15e3:100),playWalkieSquelch(A.talking,.65)}}else if(p==="player_stats"&&t?.id&&t?.stats){coopStats.set(t.id,{id:t.id,name:t.name||"GUEST",...t.stats}),ct==="ending"&&(vV=!1)}else if(p==="escaped"){t?.stats&&t?.id&&coopStats.set(t.id,{id:t.id,name:who,...t.stats}),nq(`${who} escaped!`),Hi(!1,!0,who)}else if(p==="clue_pin"&&t?.id){pinSharedClue(t.id,t.room||"CLUE",t.title||"EVIDENCE",t.detail||"",t.by||who,!1),nq(`📋 ${t.by||who} pinned clue: ${t.title}`)}else if(p==="clue_note"&&t?.text){addSharedNote(t.author||who,t.text,!1),nq(`📋 ${t.author||who} added note: "${t.text}"`)}else if(p==="ledger_record"&&t?.timeSec){recordSpeedrunEscape(t.names,t.timeSec,t.isCoop,t.mode,t.clues,!1,t.id||"")}else if(p==="item_pass"&&t?.item){
+},onGameStart(p){if(ct!=="menu")return;let seed=1986;for(const ch of(_A.code||"AKUMU"))seed=(seed*31+ch.charCodeAt(0))|0;window.__AKUMU_RNG__=ua(seed),AA?.terminal?.puzzle?.reseed&&(AA.terminal.puzzle.reseed(ua(seed)),AA.terminal.refreshScreen()),f("lobby-hud").hidden=!0,Gp.inert=!1,Ua.sound.bell(),qS(),p.forEach((A,a)=>Pi(A,a));const t=p.find(A=>A.id===_A.id);t?.name&&(cp=t.name),rS=p.map(A=>A.name).join(" & ").slice(0,24),Di()},onRemoteState(p){sS(p)},onRemoteAction({action:p,payload:t}){if(!(!RA||!AA||!sA)){const who=t?.name||"Teammate";if(p==="wheel"&&Number.isInteger(t?.index)){sA.turnWheel(t.index),Array.isArray(t.digits)&&t.digits.length===4&&(sA.state.digits=[...t.digits]);if(sA.state.digits.join("")==="7482"&&sA.state.drawer==="locked"){sA.state.drawer="unlocked",xt.unlock(),nq(`${who} unlocked the combination lock!`)}}else if(p==="room1_state"&&t){const dr=RA.targets.find(a=>a.kind==="drawer");if(Array.isArray(t.digits)&&t.digits.length===4&&(sA.state.digits=[...t.digits]),t.drawer==="unlocked"&&sA.state.drawer==="locked"&&(sA.state.drawer="unlocked",xt.unlock(),nq(`${who} unlocked the drawer!`)),t.drawer==="open"&&sA.state.drawer!=="open"&&(dr&&(dr.open=!0),sA.state.drawer="open",sA.hammer.visible=sA.state.hammer==="available",xt.drawer(),nq(`${who} opened the drawer.`)),t.hammer==="carried"&&sA.state.hammer==="available"&&(sA.state.hammer="remote",sA.hammer.visible=!1,nq(`${who} picked up the hammer.`)),(t.barricade==="removing"||t.barricade==="removed"||t.act==="window"||t.act==="window_cleared")&&sA.state.barricade==="intact"){sA.state.barricade="removed";const idx=RA.boxes.indexOf(RA.windowObstacle);idx>=0&&RA.boxes.splice(idx,1),RA.boards.forEach((Gt,H)=>{Gt.position.set(.35+H*.045,.042,-.84+H*.17),Gt.rotation.set(Math.PI/2,0,0)}),sA.state.key!=="collected"&&(sA.state.key="available",sA.keyGroup.visible=!0),xt.fall(),nq(`${who} broke the window barricade!`)}if(t.key==="collected"&&sA.state.key!=="collected"&&(sA.state.key="collected",sA.key&&(sA.key.visible=!1),sA.keyGroup&&(sA.keyGroup.visible=!1),xt.key(),nq(`${who} collected the bedroom key!`)),(t.door==="open"||t.door==="opening"||t.door==="locked-behind")&&sA.state.door==="locked"){sA.state.door="open",RA.door.rotation.y=1.22,Km(),xt.unlock(),xt.doorCreak(),nq(`${who} unlocked the bedroom door!`)}}else if(p==="pc_stage"&&t){const pz=AA.terminal.puzzle;t.seq&&(pz.sequence=t.seq);if(t.stage==="power"&&!pz.powered)pz.powerOn(),nq(`${who} powered on the storage terminal.`);else if(t.stage==="stage1"&&!pz.completed)pz.powered=!0,pz.completed=!0,pz.assistance.start(),nq(`${who} solved Terminal Stage 1 (Box 1 unlocked)!`);else if(t.stage==="stage2"&&!pz.stageTwoCompleted)pz.powered=!0,pz.completed=!0,pz.stageTwoCompleted=!0,pz.assistance.complete(),nq(`${who} solved Terminal Stage 2 (Box 2 unlocked)!`);else if(t.stage==="stage3"&&!pz.stageThreeCompleted)pz.powered=!0,pz.completed=!0,pz.stageTwoCompleted=!0,pz.passwordRecovery.completed=!0,nq(`${who} solved Terminal Stage 3 (All boxes unlocked)!`);AA.terminal.refreshScreen(),AA.terminal.refreshBoxes(),zi?.refresh?.(),ft.shadowMap.needsUpdate=!0}else if(p==="box_sync"&&Array.isArray(t?.boxes)){for(const rb of t.boxes){const lb=AA.terminal.stack.get(rb.id);lb&&AA.terminal.stack.heldId!==rb.id&&Object.assign(lb,{x:rb.x,y:rb.y,z:rb.z,placement:rb.placement==="carried"?"Remote":rb.placement,support:rb.support})}AA.terminal.refreshBoxes(),ft.shadowMap.needsUpdate=!0,t.act==="drop"&&nq(`${who} placed Box ${t.id}.`)}else if(p==="open_box"&&t?.id){const bx=AA.terminal.stack.get(t.id);bx&&bx.placement==="Remote"&&(bx.placement="floor"),AA.terminal.escape.opened.add(t.id),t.id===1&&(AA.terminal.crates[0].root.getObjectByName("reserved-wrench").visible=sA.state.wrench!=="carried"),AA.terminal.refreshBoxes(),xt.fall(),ft.shadowMap.needsUpdate=!0,nq(`${who} opened Box ${t.id}!`)}else if(p==="wrench"){AA.terminal.escape.opened.add(1),AA.terminal.collectWrench(sA.state),AA.terminal.crates[0].root.getObjectByName("reserved-wrench").visible=!1,xt.pickup(),ft.shadowMap.needsUpdate=!0,nq(`${who} collected the wrench!`)}else if(p==="vent_open"){AA.vent.openWithTool({kind:"wrench"}),xt.door(),ft.shadowMap.needsUpdate=!0,nq(`${who} opened the ventilation grille!`)}else if(p==="obs_sync"&&t){const obs=Rq();if(Array.isArray(t.tapes))t.tapes.forEach((rt,idx)=>{const lt=obs.model.tapes[idx];lt&&obs.model.held!==idx&&Object.assign(lt,{x:rt.x,y:rt.y,z:rt.z,place:rt.place==="held"?"world":rt.place,falling:!1})});if(Array.isArray(t.slots))obs.model.slots=[...t.slots];obs.model.player=t.player,obs.model.playing=!!t.playing,t.player!==null&&(obs.model.lastRecording=t.player),t.solved&&!obs.model.solved&&(obs.model.solved=!0,obs.model.solvedAt=obs.model.time,obs.model.events.live=!0,obs.model.status="ARCHIVE RESTORED",nq(`${who} restored the VHS archive!`)),t.doorOpen&&!obs.model.doorOpen&&(obs.model.doorOpen=!0,nq(`${who} opened the observation exit!`)),ft.shadowMap.needsUpdate=!0}else if(p==="washer_toggle"&&iA&&Number.isInteger(t?.machineId)){const m=iA.puzzle.machines[t.machineId];m&&(m.open=!!t.open,iA.syncVisuals(gt,0,!1),ft.shadowMap.needsUpdate=!0)}else if(p==="washer_repaired"&&iA){const broken=iA.puzzle.machines[iA.puzzle.brokenId];broken&&(broken.locked=!1,broken.missingKnob=!1,broken.fixed=!0,broken.open=!0),iA.puzzle.knob="installed",iA.puzzle.machines[3].locked=!1,iA.puzzle.machines[3].open=!0,$a.open(),iA.syncVisuals(gt,0,!1),xt.unlock(),ft.shadowMap.needsUpdate=!0,nq(`${who} repaired the washing machine & opened the chute!`)}else if(p==="knob_picked"&&iA){iA.puzzle.knob="remote",iA.syncVisuals(null,0,!1),iA.spareKnobGroup.visible=!1,ft.shadowMap.needsUpdate=!0,pinSharedClue("laundry_knob","LAUNDRY","SPARE WASHER KNOB","Retrieved from the donor washing machine drum.",who,!1),nq(`${who} found the spare control knob!`)}else if(p==="knob_dropped"&&iA){iA.puzzle.knob="dropped",iA.spareKnobGroup.position.set(t.x,t.y,t.z),iA.spareKnobGroup.visible=!0,iA.syncVisuals(null,0,!1),ft.shadowMap.needsUpdate=!0,nq(`${who} dropped the control knob.`)}else if(p==="stair_key"&&iA){iA.puzzle.collectStairKey(),iA.basement.stairKeyGroup.visible=!1,xt.key(),ft.shadowMap.needsUpdate=!0,nq(`${who} collected the laundry exit key!`)}else if(p==="main_exit_open"&&iA){iA.puzzle.mainDoorLocked=!1,iA.puzzle.mainDoorOpen=!0,iA.basement.openExitDoor(),xt.unlock(),xt.doorCreak(),ft.shadowMap.needsUpdate=!0,nq(`${who} unlocked the main exit door!`)}else if(p==="room_enter"&&t?.room){syncTeamRoom(t.room,who)}else if(p==="walkie_tx"&&t){const A=Pi({id:t.id,name:t.name||"GUEST"});if(A&&!!t.tx!==!!A.talking){A.talking=!!t.tx,A.figure.showChat(A.talking?"[📻 RADIO]":"",A.talking?15e3:100),playWalkieSquelch(A.talking,.65)}}else if(p==="player_stats"&&t?.id&&t?.stats){coopStats.set(t.id,{id:t.id,name:t.name||"GUEST",...t.stats}),ct==="ending"&&(vV=!1)}else if(p==="escaped"){t?.stats&&t?.id&&coopStats.set(t.id,{id:t.id,name:who,...t.stats}),nq(`${who} escaped!`),Hi(!1,!0,who)}else if(p==="clue_pin"&&t?.id){pinSharedClue(t.id,t.room||"CLUE",t.title||"EVIDENCE",t.detail||"",t.by||who,!1),nq(`📋 ${t.by||who} pinned clue: ${t.title}`)}else if(p==="clue_note"&&t?.text){addSharedNote(t.author||who,t.text,!1,t.x,t.y)}else if(p==="clue_draw"&&t?.pts){addSharedStroke(t,!1)}else if(p==="ledger_record"&&t?.timeSec){recordSpeedrunEscape(t.names,t.timeSec,t.isCoop,t.mode,t.clues,!1,t.id||"")}else if(p==="item_pass"&&t?.item){
  const senderAv=Pp.get(t.fromId),fromPos=senderAv?senderAv.figure.root.position.clone().add(new x(0,1.15,0)):gt.position.clone().add(new x(0,.8,0));
  if(t.toId===_A.id){
   const prevHeld=takeLocalHeldItem();
