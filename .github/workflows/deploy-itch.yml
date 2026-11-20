@@ -1,21 +1,33 @@
 name: Deploy to Itch.io
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ secrets.BUTLER_API_KEY != '' && vars.ITCH_USER != '' && vars.ITCH_GAME != '' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check Itch.io Credentials
+        id: creds
+        env:
+          BUTLER_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USER: ${{ vars.ITCH_USER }}
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+        run: |
+          if [ -n "$BUTLER_KEY" ] && [ -n "$ITCH_USER" ] && [ -n "$ITCH_GAME" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping Itch.io deploy: set BUTLER_API_KEY secret and ITCH_USER/ITCH_GAME vars to enable."
+          fi
       - name: Package HTML5 Build
+        if: steps.creds.outputs.ready == 'true'
         run: |
           mkdir -p dist
           cp index.html dist/index.html
       - name: Push to Itch.io via Butler
+        if: steps.creds.outputs.ready == 'true'
         uses: manleydev/butler-publish-itchio-action@master
         env:
           BUTLER_CREDENTIALS: ${{ secrets.BUTLER_API_KEY }}
